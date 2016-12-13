@@ -1,4 +1,4 @@
-Python学习
+Python
 =================
 
 .. toctree::

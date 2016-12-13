@@ -12,7 +12,7 @@
 .. toctree::
    :titlesonly:
    
-   MarkupLang/index
+   Markup/index
    Python/index
 
 关于我

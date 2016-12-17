@@ -1,4 +1,4 @@
-JavaScript笔记
+JavaScript
 =====================
 
 .. toctree::

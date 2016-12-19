@@ -1,7 +1,7 @@
-Django学习笔记
+Django框架笔记
 --------------
 
 .. toctree::
   :titlesonly:
 
-   例子<demo>
+  Models/index

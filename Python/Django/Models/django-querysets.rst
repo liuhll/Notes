@@ -227,9 +227,281 @@ Django 提供一种强大而又直观的方式来“处理”查询中的关联�
 
 若要跨越关联关系，只需使用关联的模型字段的名称，并使用 ``双下划线`` 分隔，直至你想要的字段
 
+这种跨越可以是 **任意的深度**
+
+::
+
+   # 获取所有Blog 的name 为'Beatles Blog' 的Entry 对象 
+   >>> Entry.objects.filter(blog__name='Beatles Blog')
+
+
+还可以反向工作。若要引用一个“反向”的关系，只需要使用该模型的小写的名称   
+
+::
+
+   #示例获取所有的Blog 对象，它们至少有一个Entry 的headline 包含'Lennon'
+   >>> Blog.objects.filter(entry__headline__contains='Lennon')
+
 
 跨越多值的关联关系
 ^^^^^^^^^^^^^^^^^^
+当你基于 ``ManyToManyField`` 或 ``反向的ForeignKey`` 来过滤一个对象时，有两种不同种类的过滤器
+
+
 
 Filter 可以引用模型的字段
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+如果你想将模型的一个字段与同一个模型的另外一个字段进行比较该怎么办？
+
+Django 提供 ``F 表达式`` 来允许这样的比较。
+
+``F()`` 返回的实例 **用作查询内部对模型字段的引用** 。 **这些引用** 可以用于查询的 ``filter`` 中来比较相同模型实例上 **不同字段之间值的比较** 。
+
+
+::
+
+   # 查找comments 数目多于pingbacks 的Entry，我们将构造一个F() 对象来引用pingback 数   目，并在查询中使用该F() 对象
+   >>> from django.db.models import F
+   >>> Entry.objects.filter(n_comments__gt=F('n_pingbacks'))
+
+Django 支持对 ``F()`` 对象使用 *加法* 、 *减法* 、 *乘法* 、 *除法* 、*取模* 以及 *幂计算* 等算术操作，两个操作数可以都是常数和其它 ``F()`` 对象
+
+
+还可以在 ``F()`` 对象中使用 **双下划线标记** 来跨越关联关系
+
+::
+
+   #要获取author 的名字与blog 名字相同的Entry，我们可以这样查询
+   >>> Entry.objects.filter(authors__name=F('blog__name'))
+
+
+对于 ``date`` 和 ``date/time`` 字段，你可以给它们加上或减去一个 ``timedelta`` 对象   
+
+::
+
+   >>> from datetime import timedelta
+   >>> Entry.objects.filter(mod_date__gt=F('pub_date') + timedelta(days=3))
+
+``F()`` 对象支持 ``.bitand()`` 和 ``.bitor()`` 两种位操作
+
+::
+
+   >>> F('somefield').bitand(16)   
+
+
+查询的快捷方式pk
+------------------------
+
+查询快捷方式 ``pk`` ，它表示 ``primary key`` 的意思
+
+任何查询类型都可以与 ``pk`` 结合来完成一个模型上对主键的查询
+
+::
+
+   # Get blogs entries with id 1, 4 and 7
+   >>> Blog.objects.filter(pk__in=[1,4,7])
+   
+   # Get all blog entries with id > 14
+   >>> Blog.objects.filter(pk__gt=14)
+
+
+``pk`` 查询在 ``join`` 中也可以工作   
+
+::
+
+   # 这三个语句是等同的
+   >>> Entry.objects.filter(blog__id__exact=3) # Explicit form
+   >>> Entry.objects.filter(blog__id=3)        # __exact is implied
+   >>> Entry.objects.filter(blog__pk=3)        # __pk implies __id__exact
+
+转义LIKE 语句中的百分号和下划线
+--------------------------------------
+
+与LIKE SQL 语句等同的字段查询（ ``iexact`` 、 ``contains`` 、``icontains`` 、 ``startswith`` 、 ``istartswith`` 、 ``endswith``  和 ``iendswith`` ）将自动转义在LIKE 语句中使用的两个特殊的字符 —— 百分号和下划线 
+
+::
+
+   >>> Entry.objects.filter(headline__contains='%') 
+   #生成的SQL 看上去会是这样：
+   SELECT ... WHERE headline LIKE '%\%%'; 
+
+缓存和查询集
+------------------
+
+每个 **查询集** 都包含一个　**缓存** 来最小化对数据库的访问   
+
+在一个新创建的 **查询集** 中，**缓存为空** 。首次对查询集进行求值 —— **同时发生** 数据库查询 ——Django 将保存查询的结果到查询集的缓存中并返回明确请求的结果（例如，如果正在迭代查询集，则返回下一个结果）。接下来对该查询集 的求值将重用缓存的结果
+
+对查询集使用不当的话,会增加对性能的损耗
+
+::
+
+   #相同的数据库查询将执行两次，显然倍增了你的数据库负载。同时，还有可能两个结果列表并不   包含相同的数据库记录，因为在两次请求期间有可能有Entry被添加进来或删除掉
+   >>> print([e.headline for e in Entry.objects.all()])
+   >>> print([e.pub_date for e in Entry.objects.all()])
+   
+   #为了避免这个问题，只需保存查询集并重新使用它
+   >>> queryset = Entry.objects.all()
+   >>> print([p.headline for p in queryset]) # Evaluate the query set.
+   >>> print([p.pub_date for p in queryset]) # Re-use the cache from the    evaluation.
+
+何时查询集不会被缓存
+^^^^^^^^^^^^^^^^^^^^^^^^^
+**查询集** **不会永远** 缓存它们的结果。当只对查询集的部分进行求值时会检查缓存， 但是如果这个部分不在缓存中，那么接下来查询返回的记录都将不会被缓存。
+
+这意味着使用 ``切片`` 或 ``索引`` 来限制查询集将 **不会** 填充缓存
+
+简单地打印查询集 **不会** 填充缓存
+
+::
+
+   #重复获取查询集对象中一个特定的索引将每次都查询数据库
+   >>> queryset = Entry.objects.all()
+   >>> print queryset[5] # Queries the database
+   >>> print queryset[5] # Queries the database again
+
+::
+
+   #如果已经对全部查询集求值过，则将检查缓存：
+   >>> queryset = Entry.objects.all()
+   >>> [entry for entry in queryset] # Queries the database
+   >>> print queryset[5] # Uses cache
+   >>> print queryset[5] # Uses cache
+
+
+使用Q 对象进行复杂的查询
+---------------------------
+
+``filter()`` 等方法中的关键字参数查询都是一起进行 ``AND`` 的
+
+如何执行更复杂的查询？(例如 ``OR`` 语句)
+
+* 使用Q 对象
+
+**Q 对象** ( ``django.db.models.Q`` ) 对象用于封装一组关键字参数。这些关键字参数就是上文 :ref:`字段查询` 中所提及的那些。
+
+::
+
+   #Q 对象封装一个LIKE 查询
+   from django.db.models import Q
+   Q(question__startswith='What')
+
+** Q对象** 可以使用 ``&`` 和 ``|`` 操作符组合起来。当一个操作符在两个 **Q对象** 上使用时，它产生一个新的 **Q对象**, **Q对象** 可以使用 ``~`` 操作符取反，这允许组合正常的查询和 **取反( ``NOT`` ) 查询**
+
+每个接受关键字参数的查询函数（例如 ``filter()`` 、 ``exclude()`` 、 ``get()`` ）都可以传递一个或多个Q 对象作为位置（不带名的）参数
+
+
+::
+
+   Q(question__startswith='Who') | Q(question__startswith='What')
+   #它等同于下面的SQL WHERE 子句：   
+   WHERE question LIKE 'Who%' OR question LIKE 'What%'
+
+
+::
+
+   Poll.objects.get(
+       Q(question__startswith='Who'),
+       Q(pub_date=date(2005, 5, 2)) | Q(pub_date=date(2005, 5, 6))
+   )
+   # 大体上可以翻译成这个SQL
+   SELECT * from polls WHERE question LIKE 'Who%'
+       AND (pub_date = '2005-05-02' OR pub_date = '2005-05-06')
+
+
+查询函数 **可以混合使用Q 对象和关键字参数** 。所有提供给查询函数的参数（关键字参数或Q 对象）都将 ``AND`` 在一起。
+
+.. note::
+
+    如果混合使用Q 对象和关键字参数,Q 对象必须位于所有关键字参数的前面       
+
+
+比较对象
+-----------------
+
+使用标准的Python 比较操作符，即双等于符号：``==``
+
+比较两个模型 **主键的值**
+
+删除对象
+---------------
+
+删除对象的方法是 ``delete()``, 这个方法将 **立即删除对象且没有返回值**
+
+::
+
+   e.delete()
+
+可以批量删除对象。
+
+* 每个查询集 都有一个  ``delete()`` 方法，它将删除该查询集中的所有成员.
+   ::
+
+      Entry.objects.filter(pub_date__year=2005).delete()
+
+
+当Django 删除一个对象时，它默认使用 ``SQL ON DELETE CASCADE`` 约束 —— 换句话讲， **任何有外键指向要删除对象的对象将一起删除**
+
+::
+
+   b = Blog.objects.get(pk=1)
+   # This will delete the Blog and all of its Entry objects.
+   b.delete()
+
+确实想删除所有的对象，你必须明确地请求一个完全的查询集::
+
+   Entry.objects.all().delete()  
+
+.. note:: 
+
+   ``delete()`` 是唯一没有在管理器 上暴露出来的查询集方法。这是一个安全机制来防止你意外地请求 ``Entry.objects.delete()``
+  
+拷贝模型实例
+-----------------
+
+最简单的方法是，只需要将 ``pk`` 设置为 ``None``
+
+::
+
+   blog = Blog(name='My blog', tagline='Blogging is easy')
+   blog.save() # blog.pk == 1
+   
+   blog.pk = None
+
+如果是继承的模型实例，则必须设置 ``pk`` 和 ``id`` 都为 ``None``
+
+::
+
+   # 这个过程不会拷贝关联的对象
+   django_blog.pk = None
+   django_blog.id = None
+   django_blog.save() # django_blog.pk == 4
+
+一次更新多个对象
+---------------------
+
+使用 ``update()`` 方法, **查询集** 提供了 ``update()`` 方法可以一次性更新查询集内所有实体的字段值
+
+对 ``update`` 的调用也可以使用 **F 表达式** 来根据模型中的一个字段更新另外一个字段
+。这对于在当前值的基础上加上一个值特别有用
+
+在 ``update`` 中你不可以使用 ``F()`` 对象引入 ``join`` —— 你只可以引用正在更新的模型的字段，如果你尝试使用 ``F()`` 对象引入一个 ``join`` ，将引发一个 ``FieldError``
+
+
+关联的对象
+---------------
+
+在一个模型中定义一个关联关系时（例如， ``ForeignKey`` 、 ``OneToOneField`` 或 ``ManyToManyField`` ），该模型的实例将带有一个方便的API 来访问关联的对象
+
+处理关联对象的其它方法
+^^^^^^^^^^^^^^^^^^^^^^
+
+* add(obj1, obj2, ...)
+   * 添加一指定的模型对象到关联的对象集中。
+* create(**kwargs)
+   * 创建一个新的对象，将它保存并放在关联的对象集中。返回新创建的对象。
+* remove(obj1, obj2, ...)
+   * 从关联的对象集中删除指定的模型对象。
+* clear()
+   * 从关联的对象集中删除所有的对象。

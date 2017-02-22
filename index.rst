@@ -17,6 +17,7 @@
    Javascript/index
    dotNet/index 
    FrontEnd/index
+   Linux/index
 
 
 关于我

@@ -9,4 +9,5 @@ dotNet Core
   静态资源 <static-files.rst>
   路由 <routing.rst>
   宿主(Hosting) <hosting.rst>
+  配置 <configuration>
   

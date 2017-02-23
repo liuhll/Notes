@@ -5,3 +5,4 @@
   :titlesonly:
      
   ls命令 <ls-cmd.rst>
+  cd命令 <cd-cmd>

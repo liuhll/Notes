@@ -7,3 +7,4 @@
   ls命令 <ls-cmd.rst>
   cd命令 <cd-cmd>
   pwd命令 <pwd-cmd>
+  mkdir命令 <mkdir-cmd>

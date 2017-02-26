@@ -9,3 +9,4 @@
   pwd命令 <pwd-cmd>
   mkdir命令 <mkdir-cmd>
   rm命令 <rm-cmd>
+  rmdir命令 <rmdir-cmd>

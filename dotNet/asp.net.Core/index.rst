@@ -10,4 +10,5 @@ dotNet Core
   路由 <routing.rst>
   宿主(Hosting) <hosting.rst>
   配置 <configuration>
+  依赖注入 <dependency-injection>
   

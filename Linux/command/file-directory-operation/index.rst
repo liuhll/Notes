@@ -11,3 +11,4 @@
   rm命令 <rm-cmd>
   rmdir命令 <rmdir-cmd>
   mv命令 <mv-cmd>
+  cp命令 <cp-cmd>

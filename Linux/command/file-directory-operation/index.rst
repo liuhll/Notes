@@ -12,3 +12,4 @@
   rmdir命令 <rmdir-cmd>
   mv命令 <mv-cmd>
   cp命令 <cp-cmd>
+  touch命令 <touch-cmd>

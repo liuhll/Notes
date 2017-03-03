@@ -15,3 +15,4 @@
   touch命令 <touch-cmd>
   cat命令 <cat-cmd>
   nl命令 <nl-cmd>
+  more命令 <more-cmd>

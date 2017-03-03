@@ -11,6 +11,7 @@
 
 .. toctree::
    :titlesonly:
+   :maxdepth: 3
    
    Markup/index
    Python/index

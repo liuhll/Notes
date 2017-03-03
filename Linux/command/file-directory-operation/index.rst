@@ -13,3 +13,5 @@
   mv命令 <mv-cmd>
   cp命令 <cp-cmd>
   touch命令 <touch-cmd>
+  cat命令 <cat-cmd>
+  

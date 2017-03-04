@@ -11,4 +11,5 @@ dotNet Core
   宿主(Hosting) <hosting.rst>
   配置 <configuration>
   依赖注入 <dependency-injection>
+  应用程序状态管理 <application-state>
   

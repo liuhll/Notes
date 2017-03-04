@@ -16,3 +16,5 @@
   cat命令 <cat-cmd>
   nl命令 <nl-cmd>
   more命令 <more-cmd>
+  less命令 <less-cmd>
+  

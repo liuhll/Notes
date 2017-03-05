@@ -5,3 +5,5 @@
    :titlesonly:
    
    file-directory-operation/index
+   file-find-operation/index
+   

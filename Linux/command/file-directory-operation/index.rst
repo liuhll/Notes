@@ -18,4 +18,4 @@
   more命令 <more-cmd>
   less命令 <less-cmd>
   tail命令 <tail-cmd>
-  
+  head命令 <head-cmd>  

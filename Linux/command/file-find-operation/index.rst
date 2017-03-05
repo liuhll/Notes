@@ -12,3 +12,4 @@ linux常用的搜索命令:
   :titlesonly:
 
   which命令 <which-cmd>
+  whereis命令 <whereis-cmd>

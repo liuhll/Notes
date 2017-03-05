@@ -17,4 +17,5 @@
   nl命令 <nl-cmd>
   more命令 <more-cmd>
   less命令 <less-cmd>
+  tail命令 <tail-cmd>
   

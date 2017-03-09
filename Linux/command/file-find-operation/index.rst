@@ -14,3 +14,4 @@ linux常用的搜索命令:
   which命令 <which-cmd>
   whereis命令 <whereis-cmd>
   locate命令 <locate-cmd>
+  find命令 <find-cmd>
